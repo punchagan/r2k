@@ -1,0 +1,3 @@
+#!/bin/bash
+MY_DIR=`dirname $0`
+PYTHONPATH=$MY_DIR $HOME/bin/r2e -c $MY_DIR/rss2instapaper.cfg -d $MY_DIR/rss2instapaper.json "$@"
