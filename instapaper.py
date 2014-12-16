@@ -9,10 +9,8 @@ import requests
 
 LOG = _logging.getLogger(__name__)
 
-
 def add_url(feed, parsed, entry, guid, message):
-    #_add_url(entry['link'], entry['title'])
-    print(entry['link'])
+    _add_url(entry['link'], entry['title'])
     return message
 
 def _add_url(url, title):
@@ -24,6 +22,8 @@ def _add_url(url, title):
         data=dict(url=url, title=title),
         auth=(username, password)
     )
+
+    # fixme: log responses
 
 if __name__ == '__main__':
     _add_url('punchagan.muse-amuse.in', 'Test page')
