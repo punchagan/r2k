@@ -1,0 +1,4 @@
+requests
+rss2email
+feedparser
+html2text
