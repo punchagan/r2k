@@ -14,7 +14,7 @@ automatically, it makes a great reading tool.
 
 I added the following crontab entry:
 
-    @hourly /path/to/this/dir/r2i run -n
+    @hourly /path/to/executable/r2i run -n
 
 `rss2email` doesn't send any emails when it is run with the `-n` option.
 
