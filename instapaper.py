@@ -32,4 +32,4 @@ def _add_url(url, title):
         )
 
 if __name__ == '__main__':
-    _add_url('punchagan.muse-amuse.inx', 'Test page')
+    _add_url('punchagan.muse-amuse.in', 'Test page')
