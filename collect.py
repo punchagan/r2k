@@ -7,29 +7,24 @@ Uses newspaper's capabilities to get the html for the article.
 """
 
 import logging as _logging
-from os.path import abspath, dirname, join
+from os.path import join
 from urllib.parse import quote
 
-from jinja2 import Environment, FileSystemLoader
 from newspaper import Article
 
+from utils import get_template, HERE
+
 LOG = _logging.getLogger(__name__)
-HERE = dirname(abspath(__file__))
 
 
 def get_article_html(feed, parsed, entry, guid, message):
     # html = _get_article_html(entry['link'], entry['title'])
     html = entry['summary']
-    path = join('inbox', quote(entry['link'], safe=''))
-    template = _get_template()
+    path = join(HERE, 'inbox', quote(entry['link'], safe=''))
+    template = get_template('article.html')
     content = template.render(**{'html': html, 'entry': entry})
     with open(path, 'w') as f:
         f.write(content)
-
-
-def _get_template():
-    env = Environment(loader=FileSystemLoader(join(HERE, 'templates')))
-    return env.get_template('article.html')
 
 
 def _get_article_html(url, title):
