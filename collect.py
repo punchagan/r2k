@@ -10,6 +10,7 @@ import logging as _logging
 from os.path import join
 from urllib.parse import quote
 
+from lxml.html import clean, fromstring, tostring
 from newspaper import Article
 
 from utils import get_template, HERE
@@ -19,7 +20,7 @@ LOG = _logging.getLogger(__name__)
 
 def get_article_html(feed, parsed, entry, guid, message):
     # html = _get_article_html(entry['link'], entry['title'])
-    html = entry['summary']
+    html = _clean_js_and_styles(entry['summary'])
     path = join(HERE, 'inbox', quote(entry['link'], safe=''))
     template = get_template('article.html')
     content = template.render(**{'html': html, 'entry': entry})
@@ -39,6 +40,12 @@ def _get_article_html(url, title):
         html = str(article.article_html, encoding='utf-8')
 
     return html
+
+
+def _clean_js_and_styles(html):
+    cleaner = clean.Cleaner(javascript=True, style=True)
+    return tostring(cleaner.clean_html(fromstring(html)))
+
 
 if __name__ == '__main__':
     content = _get_article_html(
