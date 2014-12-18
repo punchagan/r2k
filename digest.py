@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Code to aggregate all articles in inbox/ and create a digest.mobi."""
 
+import datetime
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
@@ -17,7 +18,30 @@ from utils import get_template, HERE
 INBOX = join(HERE, 'inbox')
 OUTBOX = join(HERE, 'outbox')
 
-def create_digest_html():
+
+def create_digest():
+    digest = _create_digest_html()
+    mobi = convert_html_to_mobi(digest)
+    print('Digest at {}'.format(mobi))
+    return mobi
+
+
+def convert_html_to_mobi(path):
+    kindlegen = expanduser('~/bin/kindlegen')
+    mobi_path = 'digest-{}.mobi'.format(_get_now())
+    check_call([kindlegen, path, '-o', mobi_path], cwd=OUTBOX)
+    return join(OUTBOX, mobi_path)
+
+
+def email_mobi(path):
+    from_, to, message = _create_message()
+    message = _attach_file(message, path)
+    smtp = smtplib.SMTP()  # server = localhost
+    smtp.sendmail(from_, to, message.as_string())
+    smtp.close()
+
+
+def _create_digest_html():
     posts = []
     for f in listdir(INBOX):
         if f != '.keep':
@@ -29,21 +53,6 @@ def create_digest_html():
         f.write(template.render(posts=posts))
 
     return f.name
-
-
-def convert_html_to_mobi(path):
-    kindlegen = expanduser('~/bin/kindlegen')
-    mobi_path = 'digest-{}.mobi'.format
-    check_call([kindlegen, path, '-o', mobi_path], cwd=OUTBOX)
-    return join(OUTBOX, mobi_path)
-
-
-def email_mobi(path):
-    from_, to, message = _create_message()
-    message = _attach_file(message, path)
-    smtp = smtplib.SMTP()  # server = localhost
-    smtp.sendmail(from_, to, message.as_string())
-    smtp.close()
 
 
 def _create_message(path):
@@ -72,11 +81,22 @@ def _attach_file(message, path):
     return message
 
 
-def main():
-    digest = create_digest_html()
-    mobi = convert_html_to_mobi(digest)
-    email_mobi(mobi)
+def _get_now():
+    return datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+
+def main(argv):
+    USAGE = 'Usage: {} create_digest|send_digest.'.format(argv[0])
+    if len(argv) != 2:
+        print(USAGE)
+    elif argv[1] == 'create_digest':
+        create_digest()
+    elif argv[1] == 'send_digest':
+        email_mobi(create_digest())
+    else:
+        print(USAGE)
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    main(sys.argv)
