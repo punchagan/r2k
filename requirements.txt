@@ -2,3 +2,4 @@ requests
 rss2email
 feedparser
 html2text
+-e git+git@github.com:codelucas/newspaper.git#egg=newspaper
