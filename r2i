@@ -1,3 +1,10 @@
 #!/bin/bash
+R2E=$HOME/bin/r2e
+PYTHON=$(dirname $(readlink -f $R2E))/python
 MY_DIR=`dirname $0`
-PYTHONPATH=$MY_DIR $HOME/bin/r2e -c $MY_DIR/rss2instapaper.cfg -d $MY_DIR/rss2instapaper.json "$@"
+if [[ "$@" == *"digest"* ]]
+then
+    PYTHONPATH=$MY_DIR $PYTHON $MY_DIR/digest.py "$@"
+else
+    PYTHONPATH=$MY_DIR $R2E -c $MY_DIR/rss2instapaper.cfg -d $MY_DIR/rss2instapaper.json "$@"
+fi
