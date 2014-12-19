@@ -1,10 +1,6 @@
 # Copyright (C) 2014 Puneeth Chaganti <punchagan at muse-amuse dot in>
 
-"""Generate a html from the digest with just the main article content.
-
-Uses newspaper's capabilities to get the html for the article.
-
-"""
+"""Collect all the metadata/data for the entries."""
 
 import json
 import logging as _logging
