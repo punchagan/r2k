@@ -70,6 +70,7 @@ def main(argv):
 def _add_book_cover(book):
     path = _create_cover()
     book.set_cover("image.jpg", open(path, 'rb').read())
+    book.spine.insert(0, 'cover')
 
 
 def _add_chapters(book, data):
@@ -128,7 +129,7 @@ def _add_navigation(book, chapters):
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
 
-    book.spine = ['nav'] + chapters
+    book.spine += ['nav'] + chapters
 
 
 def _archive_json_data(path):
