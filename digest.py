@@ -16,7 +16,7 @@ from urllib.request import urlretrieve
 
 from ebooklib import epub
 from lxml.html import clean, fromstring, tostring
-from rss2email.config import CONFIG
+from rss2email.config import Config
 from PIL import Image, ImageDraw
 
 HERE = dirname(abspath(__file__))
@@ -45,9 +45,10 @@ def create_digest():
 
 
 def email_mobi(path):
-    from_, to, message = _create_message()
+    from_, to, message = _create_message(path)
     message = _attach_file(message, path)
     smtp = smtplib.SMTP()  # server = localhost
+    smtp.connect()
     smtp.sendmail(from_, to, message.as_string())
     smtp.close()
 
@@ -214,8 +215,11 @@ def _create_digest_epub():
 
 
 def _create_message(path):
-    from_ = CONFIG['DEFAULT']['from']
-    to = CONFIG['DEFAULT']['to']
+    config = Config()
+    with open(join(HERE, 'rss2instapaper.cfg')) as f:
+        config.read_file(f)
+    from_ = config['DEFAULT']['from']
+    to = config['DEFAULT']['to']
     # fixme: try using 'Convert' and get rid of kindlegen?
     subject = TITLE_HUMAN
     message = MIMEMultipart(
