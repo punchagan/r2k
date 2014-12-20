@@ -6,5 +6,5 @@ if [[ "$@" == *"digest"* ]]
 then
     PYTHONPATH=$MY_DIR $PYTHON $MY_DIR/digest.py "$@"
 else
-    PYTHONPATH=$MY_DIR $R2E -c $MY_DIR/rss2instapaper.cfg -d $MY_DIR/rss2instapaper.json "$@"
+    PYTHONPATH=$MY_DIR $R2E -c $MY_DIR/r2k.cfg -d $MY_DIR/r2k.json "$@"
 fi

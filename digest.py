@@ -167,7 +167,7 @@ def _create_book_with_metadata():
     book.set_identifier(TITLE)
     book.set_title(TITLE_HUMAN)
     book.set_language('en')
-    book.add_author('r2i - ebooklib')
+    book.add_author('r2k')
 
     return book
 
@@ -216,7 +216,7 @@ def _create_digest_epub():
 
 def _create_message(path):
     config = Config()
-    with open(join(HERE, 'rss2instapaper.cfg')) as f:
+    with open(join(HERE, 'r2k.cfg')) as f:
         config.read_file(f)
     from_ = config['DEFAULT']['from']
     to = config['DEFAULT']['to']
