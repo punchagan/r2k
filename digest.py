@@ -8,6 +8,7 @@ from email.utils import formatdate
 from mimetypes import guess_type
 from os.path import abspath, basename, dirname, exists, expanduser, join
 import re
+import shutil
 import smtplib
 from subprocess import check_call
 from urllib.parse import urljoin, urlparse
@@ -129,6 +130,11 @@ def _add_navigation(book, chapters):
     book.spine = ['nav'] + chapters
 
 
+def _archive_json_data(path):
+    new_path = join(OUTBOX, 'digest-{}.json'.format(DATE))
+    shutil.move(path, new_path)
+
+
 def _attach_file(message, path):
     with open(path, "rb") as f:
         message.attach(
@@ -201,6 +207,8 @@ def _create_digest_epub():
 
     epub_digest = join(OUTBOX, '{}.epub'.format(TITLE))
     epub.write_epub(epub_digest, book, {})
+
+    _archive_json_data(data_path)
 
     return epub_digest
 
