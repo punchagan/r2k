@@ -2,7 +2,8 @@
 """Code to aggregate all articles in inbox/ and create a digest.mobi."""
 
 import datetime
-from email.mime.application import MIMEApplication
+from email import encoders
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
 from mimetypes import guess_type
@@ -46,7 +47,6 @@ def create_digest():
 
 def email_mobi(path):
     from_, to, message = _create_message(path)
-    message = _attach_file(message, path)
     smtp = smtplib.SMTP()  # server = localhost
     smtp.connect()
     smtp.sendmail(from_, to, message.as_string())
@@ -136,18 +136,6 @@ def _archive_json_data(path):
     shutil.move(path, new_path)
 
 
-def _attach_file(message, path):
-    with open(path, "rb") as f:
-        message.attach(
-            MIMEApplication(
-                f.read(),
-                Content_Disposition='attachment; filename="{}"'.format(basename(path))
-            )
-        )
-
-    return message
-
-
 def _clean_js_and_styles(html):
     cleaner = clean.Cleaner(javascript=True, style=True)
     return tostring(cleaner.clean_html(fromstring(html)))
@@ -218,16 +206,22 @@ def _create_message(path):
     config = Config()
     with open(join(HERE, 'r2k.cfg')) as f:
         config.read_file(f)
-    from_ = config['DEFAULT']['from']
-    to = config['DEFAULT']['to']
+
+    message = MIMEMultipart()
     # fixme: try using 'Convert' and get rid of kindlegen?
-    subject = TITLE_HUMAN
-    message = MIMEMultipart(
-        From=from_,
-        To=to,
-        Date=DATE_HUMAN,
-        Subject=subject
-    )
+    message['Subject'] = TITLE_HUMAN
+    message['From'] = from_ = config['DEFAULT']['from']
+    message['To'] = to = config['DEFAULT']['to']
+    message.preamble = TITLE_HUMAN
+
+    # Attach file
+    with open(path, 'rb') as fp:
+        mobi = MIMEBase('application', 'x-mobipocket-ebook')
+        mobi.set_payload(fp.read())
+    encoders.encode_base64(mobi)
+    mobi.add_header('Content-Disposition', 'attachment', filename=basename(path))
+    message.attach(mobi)
+
     return from_, to, message
 
 
