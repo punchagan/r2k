@@ -10,7 +10,7 @@ from os.path import abspath, basename, dirname, exists, expanduser, join
 import re
 import smtplib
 from subprocess import check_call
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 from urllib.request import urlretrieve
 
 from ebooklib import epub
@@ -93,7 +93,7 @@ def _add_images(book, html, base_url):
             node.getparent().remove(node)
 
         else:
-            file_name = _download_image(url)
+            file_name = _download_image(urljoin(base_url, url))
             node.set('src', file_name)
             img = epub.EpubImage(
                 file_name=file_name,
