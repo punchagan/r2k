@@ -76,7 +76,7 @@ def _add_chapters(book, data):
 
         for entry in
 
-        sorted(data.values(), key=lambda x: x['updated'], reverse=True)
+        sorted(data.values(), key=lambda x: x['date'], reverse=True)
     ]
 
     return chapters

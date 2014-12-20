@@ -5,6 +5,7 @@
 import json
 import logging as _logging
 from os.path import abspath, dirname, join
+import time
 
 LOG = _logging.getLogger(__name__)
 HERE = dirname(abspath(__file__))
@@ -23,7 +24,7 @@ def get_article_html(feed, parsed, entry, guid, message):
         'title': entry['title'],
         'url': entry['link'],
         'author': entry.get('author', ''),
-        'updated': entry['updated'],
+        'date': time.strftime('%Y-%m-%dT%H:%M:%S%z', entry['updated_parsed']),
     }
 
     _write_db(path, data)
