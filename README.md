@@ -1,21 +1,29 @@
-# r2i
+# r2k
 
-Send rss feeds to instapaper using rss2email.
+Send rss feeds to the kindle
 
-This repository contains a simple post processing hook for rss2email that sends
-urls to Instapaper using its simple API.
+This repository contains various post processing hooks for rss2email, with the
+eventual goal of sending RSS feeds to my kindle.
+
+- `instapaper.py` sends feeds to Instapaper, which has an option of sending
+  unread articles to the kindle.  But with a free account it only sends 10
+  articles, and 50 with a paid account.  The post processing hook to use is:
+  `instapaper add_article`
+
+- `collect.py` and `digest.py` together create a `.mobi` book using `ebooklib`
+  and `kindlegen`. The post processing hook to use is: `collect add_article`.
+  (I currently use this hook).
 
 The repository also has my config file with my subscriptions.
-
-With Instapaper's option of sending my unread articles to my Kindle
-automatically, it makes a great reading tool.
 
 ## Setup
 
 I added the following crontab entry:
 
-    @hourly /path/to/executable/r2i run -n
+    0 12 * * * /path/to/r2k/r2k run -n && /path/to/r2k/r2k send_digest
 
-`rss2email` doesn't send any emails when it is run with the `-n` option.
+`run -n` runs `rss2email` to get new entries for the subscribed feeds, without
+sending any emails.  `send_digest` creates a mobi digest file, and sends it to
+my kindle via email.
 
-The `r2i` executable can be used to add/remove/list feeds, etc.
+The `r2k` executable can be used to add/remove/list feeds, etc.
