@@ -228,8 +228,8 @@ def _download_image(url):
 
 
 def _image_too_small(node):
-    height = int(node.get('height', 100))
-    width = int(node.get('width', 100))
+    height = int(re.match(r'\d+', node.get('height', '100')).group())
+    width = int(re.match(r'\d+', node.get('width', '100')).group())
     return width * height < 10000
 
 
