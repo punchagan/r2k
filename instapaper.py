@@ -9,7 +9,7 @@ import requests
 
 LOG = _logging.getLogger(__name__)
 
-def add_url(feed, parsed, entry, guid, message):
+def add_article(feed, parsed, entry, guid, message):
     _add_url(entry['link'], entry['title'])
     return message
 

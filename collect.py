@@ -10,7 +10,7 @@ import time
 LOG = _logging.getLogger(__name__)
 HERE = dirname(abspath(__file__))
 
-def get_article_html(feed, parsed, entry, guid, message):
+def add_article(feed, parsed, entry, guid, message):
     """Add article to the database.
 
     A post processing hook for rss2email, run on every new entry/article.
