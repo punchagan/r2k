@@ -4,13 +4,18 @@
 
 import json
 import logging as _logging
-from os.path import join
-from utils import HERE
+from os.path import abspath, dirname, join
 
 LOG = _logging.getLogger(__name__)
-
+HERE = dirname(abspath(__file__))
 
 def get_article_html(feed, parsed, entry, guid, message):
+    """Add article to the database.
+
+    A post processing hook for rss2email, run on every new entry/article.
+
+    """
+
     path = join(HERE, 'inbox', 'digest.json')
     data = _read_db(path)
     data[guid] = {
@@ -20,8 +25,10 @@ def get_article_html(feed, parsed, entry, guid, message):
         'author': entry['author'],
         'updated': entry['updated'],
     }
+
     _write_db(path, data)
 
+# ### Private protocol ########################################################
 
 def _read_db(path):
     try:
@@ -34,6 +41,3 @@ def _read_db(path):
 def _write_db(path, data):
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)
-
-if __name__ == '__main__':
-    pass

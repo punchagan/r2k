@@ -5,17 +5,20 @@ import datetime
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
-from os.path import basename, expanduser, join
+from mimetypes import guess_type
+from os.path import abspath, basename, dirname, exists, expanduser, join
+import re
 import smtplib
 from subprocess import check_call
-import re
+from urllib.parse import urlparse
+from urllib.request import urlretrieve
 
 from ebooklib import epub
+from lxml.html import clean, fromstring, tostring
 from rss2email.config import CONFIG
 from PIL import Image, ImageDraw
 
-from utils import HERE
-
+HERE = dirname(abspath(__file__))
 INBOX = join(HERE, 'inbox')
 OUTBOX = join(HERE, 'outbox')
 DATE = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -29,16 +32,9 @@ _slugify_hyphenate_re = re.compile(r'[-\s]+')
 
 def create_digest():
     digest = _create_digest_epub()
-    mobi = convert_digest_to_mobi(digest)
+    mobi = _convert_to_mobi(digest)
     print('Digest at {}'.format(mobi))
     return mobi
-
-
-def convert_digest_to_mobi(path):
-    kindlegen = expanduser('~/bin/kindlegen')
-    mobi_path = '{}.mobi'.format(TITLE)
-    check_call([kindlegen, path, '-o', mobi_path], cwd=OUTBOX)
-    return join(OUTBOX, mobi_path)
 
 
 def email_mobi(path):
@@ -49,22 +45,70 @@ def email_mobi(path):
     smtp.close()
 
 
-def _create_digest_epub():
-    from collect import _read_db
+def main(argv):
+    USAGE = 'Usage: {} create_digest|send_digest.'.format(argv[0])
+    if len(argv) != 2:
+        print(USAGE)
+    elif argv[1] == 'create_digest':
+        create_digest()
+    elif argv[1] == 'send_digest':
+        email_mobi(create_digest())
+    else:
+        print(USAGE)
 
-    book = _create_book_with_metadata()
-    _add_book_cover(book)
 
-    data_path = join(HERE, INBOX, 'digest.json')
-    book_data = _read_db(data_path)
-    chapters = _add_chapters(book, book_data)
+# ### Private protocol ########################################################
 
-    _add_navigation(book, chapters)
+def _add_book_cover(book):
+    path = _create_cover()
+    book.set_cover("image.jpg", open(path, 'rb').read())
 
-    epub_digest = join(HERE, OUTBOX, '{}.epub'.format(TITLE))
-    epub.write_epub(epub_digest, book, {})
 
-    return epub_digest
+def _add_chapters(book, data):
+    chapters = [
+        _add_one_chapter(book, entry)
+
+        for entry in
+
+        sorted(data.values(), key=lambda x: x['updated'], reverse=True)
+    ]
+
+    return chapters
+
+
+def _add_images(book, html, base_url):
+    tree  = fromstring(html)
+    for node in tree.xpath('//*[@src]'):
+        if node.tag != 'img':
+            continue
+
+        url = node.get('src')
+        if _not_image_file(url) or _image_too_small(node):
+            node.getparent().remove(node)
+
+        else:
+            file_name = _download_image(url)
+            node.set('src', file_name)
+            img = epub.EpubImage(
+                file_name=file_name,
+                content=open(join(OUTBOX, file_name), 'rb').read()
+            )
+            book.add_item(img)
+
+    return tostring(tree)
+
+
+def _add_one_chapter(book, json_data):
+    title = json_data['title']
+    file_name = _slugify(title)+'.xhtml'
+    content = _clean_js_and_styles(json_data['content'])
+    content = _add_images(book, content, json_data['url'])
+    chapter = epub.EpubHtml(title=title, file_name=file_name, content=content)
+
+    book.add_item(chapter)
+
+    return chapter
+
 
 def _add_navigation(book, chapters):
     book.toc = chapters
@@ -74,9 +118,42 @@ def _add_navigation(book, chapters):
 
     book.spine = ['nav'] + chapters
 
-def _add_book_cover(book):
-    path = _create_cover()
-    book.set_cover("image.jpg", open(path, 'rb').read())
+
+def _attach_file(message, path):
+    with open(path, "rb") as f:
+        message.attach(
+            MIMEApplication(
+                f.read(),
+                Content_Disposition='attachment; filename="{}"'.format(basename(path))
+            )
+        )
+
+    return message
+
+
+def _clean_js_and_styles(html):
+    cleaner = clean.Cleaner(javascript=True, style=True)
+    return tostring(cleaner.clean_html(fromstring(html)))
+
+
+def _convert_to_mobi(path):
+    kindlegen = expanduser('~/bin/kindlegen')
+    mobi_path = '{}.mobi'.format(TITLE)
+    check_call([kindlegen, path, '-o', mobi_path], cwd=OUTBOX)
+    return join(OUTBOX, mobi_path)
+
+
+def _create_book_with_metadata():
+    book = epub.EpubBook()
+
+    # add metadata
+    book.set_identifier(TITLE)
+    book.set_title(TITLE_HUMAN)
+    book.set_language('en')
+    book.add_author('r2i - ebooklib')
+
+    return book
+
 
 def _create_cover():
     # http://kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.pdf
@@ -92,44 +169,31 @@ def _create_cover():
     position = ((size[0]-x)//2, size[1]//3)
     draw.text(position, TITLE_HUMAN, fill=color)
 
-    cover_path = join(HERE, OUTBOX, 'cover.jpg')
+    cover_path = join(OUTBOX, 'cover.jpg')
     with open(cover_path, 'wb') as f:
         # Scale up the image before save
         im.resize((X, Y)).save(f, format='jpeg')
 
     return cover_path
 
-def _create_book_with_metadata():
-    book = epub.EpubBook()
 
-    # add metadata
-    book.set_identifier(TITLE)
-    book.set_title(TITLE_HUMAN)
-    book.set_language('en')
-    book.add_author('r2i - ebooklib')
+def _create_digest_epub():
+    from collect import _read_db
 
-    return book
+    book = _create_book_with_metadata()
+    _add_book_cover(book)
 
-def _add_one_chapter(book, json_data):
-    title = json_data['title']
-    file_name = _slugify(title)+'.xhtml'
-    content = json_data['content']
-    chapter = epub.EpubHtml(title=title, file_name=file_name, content=content)
+    data_path = join(INBOX, 'digest.json')
+    book_data = _read_db(data_path)
+    chapters = _add_chapters(book, book_data)
 
-    book.add_item(chapter)
+    _add_navigation(book, chapters)
 
-    return chapter
+    epub_digest = join(OUTBOX, '{}.epub'.format(TITLE))
+    epub.write_epub(epub_digest, book, {})
 
-def _add_chapters(book, data):
-    chapters = [
-        _add_one_chapter(book, entry)
+    return epub_digest
 
-        for entry in
-
-        sorted(data.values(), key=lambda x: x['updated'], reverse=True)
-    ]
-
-    return chapters
 
 def _create_message(path):
     from_ = CONFIG['DEFAULT']['from']
@@ -145,19 +209,25 @@ def _create_message(path):
     return from_, to, message
 
 
-def _attach_file(message, path):
-    with open(path, "rb") as f:
-        message.attach(
-            MIMEApplication(
-                f.read(),
-                Content_Disposition='attachment; filename="{}"'.format(basename(path))
-            )
-        )
-
-    return message
+def _download_image(url):
+    name = basename(urlparse(url).path)
+    path = join(OUTBOX, name)
+    if not exists(path):
+        urlretrieve(url, path)
+    return name
 
 
-# slugify is copied from Nikola's slugify
+def _image_too_small(node):
+    height = int(node.get('height', 100))
+    width = int(node.get('width', 100))
+    return width * height < 10000
+
+
+def _not_image_file(url):
+    mt = guess_type(urlparse(url).path)[0]
+    return True if mt is None else not mt.startswith('image')
+
+
 def _slugify(value):
     """
     Normalizes string, converts to lowercase, removes non-alpha characters,
@@ -174,23 +244,12 @@ def _slugify(value):
     >>> print(slugify('foo bar'))
     foo-bar
 
+    copied from Nikola's utils.
+
     """
 
     value = str(_slugify_strip_re.sub('', value).strip().lower())
     return _slugify_hyphenate_re.sub('-', value)
-
-# Main
-
-def main(argv):
-    USAGE = 'Usage: {} create_digest|send_digest.'.format(argv[0])
-    if len(argv) != 2:
-        print(USAGE)
-    elif argv[1] == 'create_digest':
-        create_digest()
-    elif argv[1] == 'send_digest':
-        email_mobi(create_digest())
-    else:
-        print(USAGE)
 
 
 if __name__ == '__main__':
