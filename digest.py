@@ -29,6 +29,12 @@ TITLE_HUMAN = 'Daily Digest - {}'.format(DATE_HUMAN)
 _slugify_strip_re = re.compile(r'[^+\w\s-]')
 _slugify_hyphenate_re = re.compile(r'[-\s]+')
 
+ARTICLE_TEMPLATE = """
+<h1>{title}</h1>
+<div class="content">
+    {content}
+</div>
+"""
 
 def create_digest():
     digest = _create_digest_epub()
@@ -101,7 +107,11 @@ def _add_images(book, html, base_url):
 def _add_one_chapter(book, json_data):
     title = json_data['title']
     file_name = _slugify(title)+'.xhtml'
-    content = _clean_js_and_styles(json_data['content'])
+    content = str(_clean_js_and_styles(json_data['content']), encoding='utf8')
+    content = ARTICLE_TEMPLATE.format(**{
+        'content': content,
+        'title': title
+    })
     content = _add_images(book, content, json_data['url'])
     chapter = epub.EpubHtml(title=title, file_name=file_name, content=content)
 

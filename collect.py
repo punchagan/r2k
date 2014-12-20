@@ -22,7 +22,7 @@ def get_article_html(feed, parsed, entry, guid, message):
         'content': entry['summary'],
         'title': entry['title'],
         'url': entry['link'],
-        'author': entry['author'],
+        'author': entry.get('author', ''),
         'updated': entry['updated'],
     }
 
