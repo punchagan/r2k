@@ -97,12 +97,16 @@ def _add_images(book, html, base_url):
 
         else:
             file_name = _download_image(urljoin(base_url, url))
-            node.set('src', file_name)
-            img = epub.EpubImage(
-                file_name=file_name,
-                content=open(join(OUTBOX, file_name), 'rb').read()
-            )
-            book.add_item(img)
+            if file_name is None:
+                node.getparent().remove(node)
+
+            else:
+                node.set('src', file_name)
+                img = epub.EpubImage(
+                    file_name=file_name,
+                    content=open(join(OUTBOX, file_name), 'rb').read()
+                )
+                book.add_item(img)
 
     return tostring(tree)
 
@@ -233,8 +237,8 @@ def _download_image(url):
         try:
             urlretrieve(url, path)
         except Exception:
-            with open(path, 'w'):
-                pass
+            name = None
+
     return name
 
 
