@@ -230,7 +230,11 @@ def _download_image(url):
     name = basename(urlparse(url).path)
     path = join(OUTBOX, name)
     if not exists(path):
-        urlretrieve(url, path)
+        try:
+            urlretrieve(url, path)
+        except Exception:
+            with open(path, 'w'):
+                pass
     return name
 
 
