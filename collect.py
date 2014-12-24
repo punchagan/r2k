@@ -29,6 +29,8 @@ def add_article(feed, parsed, entry, guid, message):
 
     _write_db(path, data)
 
+    return message
+
 # ### Private protocol ########################################################
 
 def _read_db(path):
