@@ -25,6 +25,7 @@ def add_article(feed, parsed, entry, guid, message):
         'url': entry['link'],
         'author': entry.get('author', ''),
         'date': time.strftime('%Y-%m-%dT%H:%M:%S%z', entry['updated_parsed']),
+        'blog': parsed.get('feed', {}).get('title', ''),
     }
 
     _write_db(path, data)

@@ -33,6 +33,11 @@ _slugify_hyphenate_re = re.compile(r'[-\s]+')
 
 ARTICLE_TEMPLATE = """
 <h1>{title}</h1>
+<div>
+    <span class="author">{author}</span>
+    <span class="date">{date}</span>
+    <span class="blog">{blog}</span>
+</div>
 <div class="content">
     {content}
 </div>
@@ -117,7 +122,10 @@ def _add_one_chapter(book, json_data):
     content = str(_clean_js_and_styles(json_data['content']), encoding='utf8')
     content = ARTICLE_TEMPLATE.format(**{
         'content': content,
-        'title': title
+        'title': title,
+        'author': json_data['author'],
+        'date': json_data['date'],
+        'blog': json_data['blog'],
     })
     content = _add_images(book, content, json_data['url'])
     chapter = epub.EpubHtml(title=title, file_name=file_name, content=content)
