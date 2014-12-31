@@ -151,7 +151,14 @@ def _archive_json_data(path):
 
 def _clean_js_and_styles(html):
     cleaner = clean.Cleaner(javascript=True, style=True)
-    return tostring(cleaner.clean_html(fromstring(html)))
+
+    try:
+        html = tostring(cleaner.clean_html(fromstring(html)))
+
+    except Exception:
+        print('Failed to clean js and styles.')
+
+    return html
 
 
 def _convert_to_mobi(path):
