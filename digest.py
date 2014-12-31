@@ -119,7 +119,7 @@ def _add_images(book, html, base_url):
 def _add_one_chapter(book, json_data):
     title = json_data['title']
     file_name = _slugify(title)+'.xhtml'
-    content = str(_clean_js_and_styles(json_data['content']), encoding='utf8')
+    content = _clean_js_and_styles(json_data['content'])
     content = ARTICLE_TEMPLATE.format(**{
         'content': content,
         'title': title,
@@ -153,7 +153,9 @@ def _clean_js_and_styles(html):
     cleaner = clean.Cleaner(javascript=True, style=True)
 
     try:
-        html = tostring(cleaner.clean_html(fromstring(html)))
+        html = str(
+            tostring(cleaner.clean_html(fromstring(html))), encoding='utf8'
+        )
 
     except Exception:
         print('Failed to clean js and styles.')
