@@ -93,11 +93,11 @@ def _add_chapters(book, data):
 def _add_images(book, html, base_url):
     tree  = fromstring(html)
     for node in tree.xpath('//*[@src]'):
-        if node.tag != 'img':
+        if node.tag != 'img' or node.tag != 'video':
             continue
 
         url = node.get('src')
-        if _not_image_file(url) or _image_too_small(node):
+        if node.tag == 'video' or _not_image_file(url) or _image_too_small(node):
             node.getparent().remove(node)
 
         else:
