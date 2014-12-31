@@ -158,7 +158,7 @@ def _clean_js_and_styles(html):
         )
 
     except Exception:
-        print('Failed to clean js and styles.')
+        html = 'Failed to clean js and styles.'
 
     return html
 
