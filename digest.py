@@ -11,7 +11,7 @@ from os.path import abspath, basename, dirname, exists, expanduser, join
 import re
 import shutil
 import smtplib
-from subprocess import check_call
+from subprocess import Popen
 from urllib.parse import urljoin, urlparse
 from urllib.request import urlretrieve
 
@@ -46,7 +46,11 @@ ARTICLE_TEMPLATE = """
 def create_digest():
     digest = _create_digest_epub()
     mobi = _convert_to_mobi(digest)
-    print('Digest at {}'.format(mobi))
+    if exists(mobi):
+        print('Digest at {}'.format(mobi))
+    else:
+        print('Digest creation failed')
+        mobi = None
     return mobi
 
 
@@ -65,7 +69,9 @@ def main(argv):
     elif argv[1] == 'create_digest':
         create_digest()
     elif argv[1] == 'send_digest':
-        email_mobi(create_digest())
+        mobi = create_digest()
+        if mobi is not None:
+            email_mobi()
     else:
         print(USAGE)
 
@@ -166,7 +172,7 @@ def _clean_js_and_styles(html):
 def _convert_to_mobi(path):
     kindlegen = expanduser('~/bin/kindlegen')
     mobi_path = '{}.mobi'.format(TITLE)
-    check_call([kindlegen, path, '-o', mobi_path], cwd=OUTBOX)
+    Popen([kindlegen, path, '-o', mobi_path], cwd=OUTBOX).wait()
     return join(OUTBOX, mobi_path)
 
 
