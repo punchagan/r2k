@@ -93,7 +93,7 @@ def _add_chapters(book, data):
 def _add_images(book, html, base_url):
     tree  = fromstring(html)
     for node in tree.xpath('//*[@src]'):
-        if node.tag != 'img' or node.tag != 'video':
+        if node.tag not in ('img', 'video'):
             continue
 
         url = node.get('src')
