@@ -71,7 +71,7 @@ def main(argv):
     elif argv[1] == 'send_digest':
         mobi = create_digest()
         if mobi is not None:
-            email_mobi()
+            email_mobi(mobi)
     else:
         print(USAGE)
 
