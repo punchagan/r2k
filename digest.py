@@ -47,9 +47,10 @@ ARTICLE_TEMPLATE = """
 
 def create_digest(path):
     print('Using {} to create digest.'.format(path))
-    digest = _create_digest_epub(path)
-    mobi = _convert_to_mobi(digest)
+    epub, entries = _create_digest_epub(path)
+    mobi = _convert_to_mobi(epub)
     _update_last_digest_timestamp(path)
+    _mark_entries_as_digested(path, entries)
 
     if exists(mobi):
         print('Digest at {}'.format(mobi))
@@ -244,15 +245,15 @@ def _create_digest_epub(path):
     book = _create_book_with_metadata()
     _add_book_cover(book)
 
-    book_data = _get_entries(path)
-    chapters = _add_chapters(book, book_data)
+    entries = _get_entries(path)
+    chapters = _add_chapters(book, entries)
 
     _add_navigation(book, chapters)
 
     epub_digest = join(OUTBOX, '{}.epub'.format(TITLE))
     epub.write_epub(epub_digest, book, {})
 
-    return epub_digest
+    return epub_digest, entries
 
 
 def _create_message(path):
@@ -309,6 +310,14 @@ def _image_too_small(node):
     height = int(re.match(r'\d+', node.get('height', '100')).group())
     width = int(re.match(r'\d+', node.get('width', '100')).group())
     return width * height < 10000
+
+
+def _mark_entries_as_digested(db_path, entries):
+    db = Database(db_path)
+
+    for key, value in entries.items():
+        value['digested'] = True
+        db.data(key=key, value=value)
 
 
 def _not_image_file(url):
