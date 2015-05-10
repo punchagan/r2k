@@ -44,6 +44,7 @@ ARTICLE_TEMPLATE = """
 """
 
 def create_digest(path=None):
+    print('Using {} to create digest.'.format(path))
     digest = _create_digest_epub(path)
     mobi = _convert_to_mobi(digest)
 
