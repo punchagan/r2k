@@ -269,7 +269,7 @@ def _create_message(path):
 
 def _download_image(url):
     name, ext = splitext(basename(urlparse(url).path))
-    name = '{}.{}'.format(_slugify(name), ext)
+    name = '{}{}'.format(_slugify(name), ext)
     path = join(OUTBOX, name)
     if not exists(path):
         try:
