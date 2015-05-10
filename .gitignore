@@ -2,3 +2,5 @@
 /.env
 /inbox/*
 /outbox/*
+/__pycache__/
+/r2k.json
