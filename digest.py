@@ -7,7 +7,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
 from mimetypes import guess_type
-from os.path import abspath, basename, dirname, exists, expanduser, join
+from os.path import abspath, basename, dirname, exists, expanduser, isabs, join
 import re
 import shutil
 import smtplib
@@ -43,8 +43,8 @@ ARTICLE_TEMPLATE = """
 </div>
 """
 
-def create_digest():
-    digest = _create_digest_epub()
+def create_digest(path=None):
+    digest = _create_digest_epub(path)
     mobi = _convert_to_mobi(digest)
     if exists(mobi):
         print('Digest at {}'.format(mobi))
@@ -63,13 +63,17 @@ def email_mobi(path):
 
 
 def main(argv):
-    USAGE = 'Usage: {} create_digest|send_digest.'.format(argv[0])
-    if len(argv) != 2:
+    USAGE = 'Usage: {} create_digest|send_digest [path-to-json].'.format(argv[0])
+    if len(argv) < 2:
         print(USAGE)
+
     elif argv[1] == 'create_digest':
-        create_digest()
+        path = ''.join(argv[2:]) or None
+        create_digest(path)
+
     elif argv[1] == 'send_digest':
-        mobi = create_digest()
+        path = ''.join(argv[2:]) or None
+        mobi = create_digest(path)
         if mobi is not None:
             email_mobi(mobi)
     else:
@@ -151,9 +155,11 @@ def _add_navigation(book, chapters):
 
 
 def _archive_json_data(path):
-    new_path = join(OUTBOX, 'digest-{}.json'.format(DATE))
+    filename = basename(path)
+    if filename == 'digest.json':
+        filename = 'digest-{}.json'.format(DATE)
+    new_path = join(OUTBOX, filename)
     shutil.move(path, new_path)
-
 
 def _clean_js_and_styles(html):
     cleaner = clean.Cleaner(javascript=True, style=True)
@@ -210,13 +216,19 @@ def _create_cover():
     return cover_path
 
 
-def _create_digest_epub():
+def _create_digest_epub(path=None):
     from collect import _read_db
 
     book = _create_book_with_metadata()
     _add_book_cover(book)
 
-    data_path = join(INBOX, 'digest.json')
+    if path is None:
+        data_path = join(INBOX, 'digest.json')
+    elif isabs(path):
+        data_path = path
+    else:
+        data_path = join(INBOX, path)
+
     book_data = _read_db(data_path)
     chapters = _add_chapters(book, book_data)
 
