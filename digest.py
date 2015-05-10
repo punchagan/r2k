@@ -28,7 +28,7 @@ TITLE = 'digest-{}'.format(DATE)
 DATE_HUMAN = formatdate(localtime=True)
 TITLE_HUMAN = 'Daily Digest - {}'.format(DATE_HUMAN)
 
-_slugify_strip_re = re.compile(r'[^+\w\s-]')
+_slugify_strip_re = re.compile(r'[^\w\s-]')
 _slugify_hyphenate_re = re.compile(r'[-\s]+')
 
 ARTICLE_TEMPLATE = """
