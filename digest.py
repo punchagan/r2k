@@ -8,15 +8,16 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
 from mimetypes import guess_type
-from os.path import abspath, basename, dirname, exists, expanduser, isabs, join, splitext
+from os.path import abspath, basename, dirname, exists, expanduser, join, splitext
 import re
-import shutil
 import smtplib
 from subprocess import Popen
+import time
 from urllib.parse import urljoin, urlparse
 from urllib.request import urlretrieve
 
 from ebooklib import epub
+from jsondb.db import Database
 from lxml.html import clean, fromstring, tostring
 from rss2email.config import Config
 from PIL import Image, ImageDraw
@@ -44,10 +45,11 @@ ARTICLE_TEMPLATE = """
 </div>
 """
 
-def create_digest(path=None):
+def create_digest(path):
     print('Using {} to create digest.'.format(path))
     digest = _create_digest_epub(path)
     mobi = _convert_to_mobi(digest)
+    _update_last_digest_timestamp(path)
 
     if exists(mobi):
         print('Digest at {}'.format(mobi))
@@ -72,11 +74,11 @@ def main(argv):
         print(USAGE)
 
     elif argv[1] == 'create_digest':
-        path = ''.join(argv[2:]) or None
+        path = ''.join(argv[2:]) or join(INBOX, 'digest.json')
         create_digest(path)
 
     elif argv[1] == 'send_digest':
-        path = ''.join(argv[2:]) or None
+        path = ''.join(argv[2:]) or join(INBOX, 'digest.json')
         mobi = create_digest(path)
         if mobi is not None:
             email_mobi(mobi)
@@ -98,7 +100,7 @@ def _add_chapters(book, data):
 
         for entry in
 
-        sorted(data.values(), key=lambda x: x['date'], reverse=True)
+        sorted(data.values(), key=lambda x: x['date_published'], reverse=True)
     ]
 
     return chapters
@@ -138,7 +140,7 @@ def _add_one_chapter(book, json_data):
         'content': content,
         'title': title,
         'author': json_data['author'],
-        'date': json_data['date'],
+        'date': json_data['date_published'],
         'blog': json_data['blog'],
     })
     content = _add_images(book, content, json_data['url'])
@@ -158,13 +160,6 @@ def _add_navigation(book, chapters):
 
     book.spine += ['nav'] + chapters
 
-
-def _archive_json_data(path):
-    filename = basename(path)
-    if filename == 'digest.json':
-        filename = 'digest-{}.json'.format(DATE)
-    new_path = join(OUTBOX, filename)
-    shutil.move(path, new_path)
 
 def _clean_js_and_styles(html):
     cleaner = clean.Cleaner(javascript=True, style=True)
@@ -245,28 +240,17 @@ def _create_cover():
     return cover_path
 
 
-def _create_digest_epub(path=None):
-    from collect import _read_db
-
+def _create_digest_epub(path):
     book = _create_book_with_metadata()
     _add_book_cover(book)
 
-    if path is None:
-        data_path = join(INBOX, 'digest.json')
-    elif isabs(path):
-        data_path = path
-    else:
-        data_path = join(INBOX, path)
-
-    book_data = _read_db(data_path)
+    book_data = _get_entries(path)
     chapters = _add_chapters(book, book_data)
 
     _add_navigation(book, chapters)
 
-    epub_digest = join(OUTBOX, data_path.replace('.json', '.epub'))
+    epub_digest = join(OUTBOX, '{}.epub'.format(TITLE))
     epub.write_epub(epub_digest, book, {})
-
-    _archive_json_data(data_path)
 
     return epub_digest
 
@@ -307,6 +291,20 @@ def _download_image(url):
     return name
 
 
+def _get_entries(db_path):
+    db = Database(db_path)
+    data = db.data()
+
+    last_digest_timestamp = data.pop('last-digest-timestamp', None)
+    if last_digest_timestamp is not None:
+        data = {
+            guid: entry for guid, entry in data.items()
+            if entry['date_added'] > last_digest_timestamp
+        }
+
+    return data
+
+
 def _image_too_small(node):
     height = int(re.match(r'\d+', node.get('height', '100')).group())
     width = int(re.match(r'\d+', node.get('width', '100')).group())
@@ -340,6 +338,15 @@ def _slugify(value):
 
     value = str(_slugify_strip_re.sub('', value).strip().lower())
     return _slugify_hyphenate_re.sub('-', value)
+
+
+def _update_last_digest_timestamp(path):
+    db = Database(path)
+    db.data(
+        key='last-digest-timestamp',
+        value=time.strftime('%Y-%m-%dT%H:%M:%S%z', time.localtime())
+    )
+
 
 
 if __name__ == '__main__':

@@ -4,3 +4,4 @@ feedparser
 html2text
 -e git+git@github.com:punchagan/ebooklib.git#egg=ebooklib
 pillow
+jsondatabase

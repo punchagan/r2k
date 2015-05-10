@@ -2,10 +2,11 @@
 
 """Collect all the metadata/data for the entries."""
 
-import json
 import logging as _logging
 from os.path import abspath, dirname, join
 import time
+
+from jsondb.db import Database
 
 LOG = _logging.getLogger(__name__)
 HERE = dirname(abspath(__file__))
@@ -18,30 +19,17 @@ def add_article(feed, parsed, entry, guid, message):
     """
 
     path = join(HERE, 'inbox', 'digest.json')
-    data = _read_db(path)
-    data[guid] = {
+    db = Database(path)
+    key = guid or entry['link'] or entry['title']
+    data = {
         'content': entry['summary'],
         'title': entry['title'],
         'url': entry['link'],
         'author': entry.get('author', ''),
-        'date': time.strftime('%Y-%m-%dT%H:%M:%S%z', entry['updated_parsed']),
         'blog': parsed.get('feed', {}).get('title', ''),
+        'date_published': time.strftime('%Y-%m-%dT%H:%M:%S%z', entry['updated_parsed']),
+        'date_added': time.strftime('%Y-%m-%dT%H:%M:%S%z', time.localtime()),
     }
-
-    _write_db(path, data)
+    db.data(key=key, value=data)
 
     return message
-
-# ### Private protocol ########################################################
-
-def _read_db(path):
-    try:
-        with open(path) as f:
-            return json.load(f)
-    except Exception:
-        return {}
-
-
-def _write_db(path, data):
-    with open(path, 'w') as f:
-        json.dump(data, f, indent=2)
