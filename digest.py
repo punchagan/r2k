@@ -46,8 +46,10 @@ ARTICLE_TEMPLATE = """
 def create_digest(path=None):
     digest = _create_digest_epub(path)
     mobi = _convert_to_mobi(digest)
+
     if exists(mobi):
         print('Digest at {}'.format(mobi))
+
     else:
         print('Digest creation failed')
         mobi = None
@@ -177,9 +179,9 @@ def _clean_js_and_styles(html):
 
 def _convert_to_mobi(path):
     kindlegen = expanduser('~/bin/kindlegen')
-    mobi_path = '{}.mobi'.format(TITLE)
+    mobi_path = basename(path.replace('.epub', '.mobi'))
     Popen([kindlegen, path, '-o', mobi_path], cwd=OUTBOX).wait()
-    return join(OUTBOX, mobi_path)
+    return join(dirname(path), mobi_path)
 
 
 def _create_book_with_metadata():
@@ -234,7 +236,7 @@ def _create_digest_epub(path=None):
 
     _add_navigation(book, chapters)
 
-    epub_digest = join(OUTBOX, '{}.epub'.format(TITLE))
+    epub_digest = join(OUTBOX, data_path.replace('.json', '.epub'))
     epub.write_epub(epub_digest, book, {})
 
     _archive_json_data(data_path)
