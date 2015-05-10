@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright (C) 2014-2015 Puneeth Chaganti <punchagan at muse-amuse dot in>
 """Code to aggregate all articles in inbox/ and create a digest.mobi."""
 
 import datetime
@@ -199,7 +200,7 @@ def _convert_urls_to_full(html, base_url):
             continue
 
         elif url.startswith('//'):
-            # Kindlegen doesn't recognize urls like //xkcd.com/131
+            # Kindlegen doesn't like urls like //xkcd.com/131
             url = 'http:{}'.format(url)
 
         elif not scheme and (path or fragment):

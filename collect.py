@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Puneeth Chaganti <punchagan at muse-amuse dot in>
+# Copyright (C) 2014-2015 Puneeth Chaganti <punchagan at muse-amuse dot in>
 
 """Collect all the metadata/data for the entries."""
 
