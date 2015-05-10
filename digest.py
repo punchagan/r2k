@@ -7,7 +7,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
 from mimetypes import guess_type
-from os.path import abspath, basename, dirname, exists, expanduser, isabs, join
+from os.path import abspath, basename, dirname, exists, expanduser, isabs, join, splitext
 import re
 import shutil
 import smtplib
@@ -266,7 +266,8 @@ def _create_message(path):
 
 
 def _download_image(url):
-    name = basename(urlparse(url).path)
+    name, ext = splitext(basename(urlparse(url).path))
+    name = '{}.{}'.format(_slugify(name), ext)
     path = join(OUTBOX, name)
     if not exists(path):
         try:
