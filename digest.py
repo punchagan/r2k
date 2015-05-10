@@ -141,6 +141,7 @@ def _add_one_chapter(book, json_data):
         'blog': json_data['blog'],
     })
     content = _add_images(book, content, json_data['url'])
+    content = _convert_urls_to_full(content, json_data['url'])
     chapter = epub.EpubHtml(title=title, file_name=file_name, content=content)
 
     book.add_item(chapter)
@@ -183,6 +184,30 @@ def _convert_to_mobi(path):
     mobi_path = basename(path.replace('.epub', '.mobi'))
     Popen([kindlegen, path, '-o', mobi_path], cwd=OUTBOX).wait()
     return join(dirname(path), mobi_path)
+
+
+def _convert_urls_to_full(html, base_url):
+    tree  = fromstring(html)
+    for node in tree.xpath('//*[@href]'):
+        url = node.get('href')
+        parsed_url = urlparse(url)
+        scheme = parsed_url.scheme
+        path = parsed_url.path
+        fragment = parsed_url.fragment
+
+        if node.tag not in ('a') or scheme:
+            continue
+
+        elif url.startswith('//'):
+            # Kindlegen doesn't recognize urls like //xkcd.com/131
+            url = 'http:{}'.format(url)
+
+        elif not scheme and (path or fragment):
+            url = urljoin(base_url, url)
+
+        node.set('href', url)
+
+    return tostring(tree)
 
 
 def _create_book_with_metadata():
