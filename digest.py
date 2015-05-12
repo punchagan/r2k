@@ -316,7 +316,10 @@ def _mark_entries_as_digested(db_path, entries):
     db = Database(db_path)
 
     for key, value in entries.items():
-        value['digested'] = True
+        tags = value.setdefault('tags', [])
+        if 'digest' not in tags:
+            tags.append('digest')
+
         db.data(key=key, value=value)
 
 
