@@ -33,23 +33,28 @@ TITLE_HUMAN = 'Daily Digest - {}'.format(DATE_HUMAN)
 _slugify_strip_re = re.compile(r'[^\w\s-]')
 _slugify_hyphenate_re = re.compile(r'[-\s]+')
 
+CONFIG = Config()
+with open(join(HERE, 'r2k.cfg')) as f:
+    CONFIG.read_file(f)
+
+
 ARTICLE_TEMPLATE = """
-<h1>{title}</h1>
+<h1>{{title}}</h1>
 <div>
-    <span class="author">{author}</span>
-    <span class="date">{date}</span>
-    <span class="blog">{blog}</span>
+    <span class="author">{{author}}</span>
+    <span class="date">{{date}}</span>
+    <span class="blog">{{blog}}</span>
 </div>
 <div class="content">
-    {content}
+    {{content}}
 </div>
 <div class="r2k-actions">
     <ul style="display: inline;">
-        <li><a href="http://localhost:8080/edit?id={id}&tag=read">Mark article as read</a></li>
-        <li><a href="http://localhost:8080/edit?id={id}&tag=!read">Mark article as unread</a></li>
+        <li><a href="{webserver}/edit?id={{id}}&tag=read">Mark article as read</a></li>
+        <li><a href="{webserver}/edit?id={{id}}&tag=!read">Mark article as unread</a></li>
     </ul>
 <div>
-"""
+""".format(webserver=CONFIG['DEFAULT']['goover-server'])
 
 def create_digest(path):
     print('Using {} to create digest.'.format(path))
@@ -264,15 +269,11 @@ def _create_digest_epub(path):
 
 
 def _create_message(path):
-    config = Config()
-    with open(join(HERE, 'r2k.cfg')) as f:
-        config.read_file(f)
-
     message = MIMEMultipart()
     # fixme: try using 'Convert' and get rid of kindlegen?
     message['Subject'] = TITLE_HUMAN
-    message['From'] = from_ = config['DEFAULT']['from']
-    message['To'] = to = config['DEFAULT']['to']
+    message['From'] = from_ = CONFIG['DEFAULT']['from']
+    message['To'] = to = CONFIG['DEFAULT']['to']
     message.preamble = TITLE_HUMAN
 
     # Attach file
