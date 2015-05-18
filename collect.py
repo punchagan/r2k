@@ -4,12 +4,14 @@
 
 import logging as _logging
 from os.path import abspath, dirname, join
+import random
 import time
 
 from jsondb.db import Database
 
 LOG = _logging.getLogger(__name__)
 HERE = dirname(abspath(__file__))
+CHOICES = '01234456789abcdef'
 
 def add_article(feed, parsed, entry, guid, message):
     """Add article to the database.
@@ -20,7 +22,7 @@ def add_article(feed, parsed, entry, guid, message):
 
     path = join(HERE, 'inbox', 'digest.json')
     db = Database(path)
-    key = guid or entry['link'] or entry['title']
+    key = random_string()
     data = {
         'content': entry['summary'],
         'title': entry['title'],
@@ -33,3 +35,7 @@ def add_article(feed, parsed, entry, guid, message):
     db.data(key=key, value=data)
 
     return message
+
+
+def random_string(n=20):
+    return ''.join(random.choice(CHOICES) for _ in range(n))
