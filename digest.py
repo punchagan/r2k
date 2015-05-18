@@ -13,7 +13,7 @@ import re
 import smtplib
 from subprocess import Popen
 import time
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 from urllib.request import urlretrieve
 
 from ebooklib import epub
@@ -43,6 +43,12 @@ ARTICLE_TEMPLATE = """
 <div class="content">
     {content}
 </div>
+<div class="r2k-actions">
+    <ul style="display: inline;">
+        <li><a href="http://localhost:8080/edit?id={id}&tag=read">Mark article as read</a></li>
+        <li><a href="http://localhost:8080/edit?id={id}&tag=!read">Mark article as unread</a></li>
+    </ul>
+<div>
 """
 
 def create_digest(path):
@@ -96,13 +102,13 @@ def _add_book_cover(book):
 
 
 def _add_chapters(book, data):
-    chapters = [
-        _add_one_chapter(book, entry)
+    data = sorted(
+        [each for each in data.items()],
+        key=lambda x: x[1]['date_published'],
+        reverse=True
+    )
 
-        for entry in
-
-        sorted(data.values(), key=lambda x: x['date_published'], reverse=True)
-    ]
+    chapters = [_add_one_chapter(book, *entry) for entry in data]
 
     return chapters
 
@@ -133,11 +139,12 @@ def _add_images(book, html, base_url):
     return tostring(tree)
 
 
-def _add_one_chapter(book, json_data):
+def _add_one_chapter(book, id_, json_data):
     title = json_data['title']
     file_name = _slugify(title)+'.xhtml'
     content = _clean_js_and_styles(json_data['content'])
     content = ARTICLE_TEMPLATE.format(**{
+        'id': quote(id_),
         'content': content,
         'title': title,
         'author': json_data['author'],
@@ -358,7 +365,6 @@ def _update_last_digest_timestamp(path):
         key='last-digest-timestamp',
         value=time.strftime('%Y-%m-%dT%H:%M:%S%z', time.localtime())
     )
-
 
 
 if __name__ == '__main__':
