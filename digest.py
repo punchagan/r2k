@@ -50,8 +50,10 @@ ARTICLE_TEMPLATE = """
 </div>
 <div class="r2k-actions">
     <ul style="display: inline;">
-        <li><a href="{webserver}/edit?id={{id}}&tag=read">Mark article as read</a></li>
-        <li><a href="{webserver}/edit?id={{id}}&tag=!read">Mark article as unread</a></li>
+        <li><a href="{webserver}/edit?id={{id}}&tag=read">Mark ARTICLE as read</a></li>
+        <li><a href="{webserver}/edit?id={{id}}&tag=!read">Mark ARTICLE as UNread</a></li>
+        <li><a href="{webserver}/edit?{{all_ids}}&tag=read">Mark DIGEST as read</a></li>
+        <li><a href="{webserver}/edit?{{all_ids}}&tag=!read">Mark DIGEST as UNread</a></li>
     </ul>
 <div>
 """.format(webserver=CONFIG['DEFAULT']['goover-server'])
@@ -113,7 +115,8 @@ def _add_chapters(book, data):
         reverse=True
     )
 
-    chapters = [_add_one_chapter(book, *entry) for entry in data]
+    keys = '&'.join('id={}'.format(quote(key)) for key, _ in data)
+    chapters = [_add_one_chapter(book, keys, *entry) for entry in data]
 
     return chapters
 
@@ -144,12 +147,13 @@ def _add_images(book, html, base_url):
     return tostring(tree)
 
 
-def _add_one_chapter(book, id_, json_data):
+def _add_one_chapter(book, all_ids, id_, json_data):
     title = json_data['title']
     file_name = _slugify(title)+'.xhtml'
     content = _clean_js_and_styles(json_data['content'])
     content = ARTICLE_TEMPLATE.format(**{
         'id': quote(id_),
+        'all_ids': all_ids,
         'content': content,
         'title': title,
         'author': json_data['author'],
