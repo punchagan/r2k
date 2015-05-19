@@ -1,4 +1,8 @@
 #!/bin/bash
+ENV_FILE=`dirname $0`/.env
+if [ -f $ENV_FILE ]; then
+    . $ENV_FILE
+fi
 R2E=$HOME/bin/r2e
 PYTHON=$(dirname $(readlink -f $R2E))/python
 MY_DIR=`dirname $0`

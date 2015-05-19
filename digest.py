@@ -8,6 +8,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
 from mimetypes import guess_type
+import os
 from os.path import abspath, basename, dirname, exists, expanduser, join, splitext
 import re
 import smtplib
@@ -37,6 +38,8 @@ CONFIG = Config()
 with open(join(HERE, 'r2k.cfg')) as f:
     CONFIG.read_file(f)
 
+WEBSERVER = os.getenv('GOOVER_SERVER', CONFIG['DEFAULT']['goover-server'])
+
 
 ARTICLE_TEMPLATE = """
 <h1>{{title}}</h1>
@@ -56,7 +59,7 @@ ARTICLE_TEMPLATE = """
         <li><a href="{webserver}/edit?{{all_ids}}&tag=!read">Mark DIGEST as UNread</a></li>
     </ul>
 <div>
-""".format(webserver=CONFIG['DEFAULT']['goover-server'])
+""".format(webserver=WEBSERVER)
 
 def create_digest(path):
     print('Using {} to create digest.'.format(path))
