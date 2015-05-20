@@ -38,7 +38,7 @@ CONFIG = Config()
 with open(join(HERE, 'r2k.cfg')) as f:
     CONFIG.read_file(f)
 
-WEBSERVER = os.getenv('GOOVER_SERVER', CONFIG['DEFAULT']['goover-server'])
+WEBSERVER = os.getenv('GOOVER_SERVER', 'http://localhost:8080/')
 
 
 ARTICLE_TEMPLATE = """
