@@ -318,6 +318,11 @@ def _get_entries(db_path):
             if entry['date_added'] > last_digest_timestamp
         }
 
+    data = {
+        guid: entry for guid, entry in data.items()
+        if 'read' not in entry.get('tags', [])
+    }
+
     return data
 
 
