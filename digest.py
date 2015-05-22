@@ -20,8 +20,9 @@ from urllib.request import urlretrieve
 from ebooklib import epub
 from jsondb.db import Database
 from lxml.html import clean, fromstring, tostring
-from rss2email.config import Config
+from newspaper import Article
 from PIL import Image, ImageDraw
+from rss2email.config import Config
 
 HERE = dirname(abspath(__file__))
 INBOX = join(HERE, 'inbox')
@@ -33,6 +34,7 @@ TITLE_HUMAN = 'Daily Digest - {}'.format(DATE_HUMAN)
 
 _slugify_strip_re = re.compile(r'[^\w\s-]')
 _slugify_hyphenate_re = re.compile(r'[-\s]+')
+_read_more_re = re.compile(r'(read more|continue reading)')
 
 CONFIG = Config()
 with open(join(HERE, 'r2k.cfg')) as f:
@@ -153,20 +155,24 @@ def _add_images(book, html, base_url):
 def _add_one_chapter(book, all_ids, id_, json_data):
     title = json_data['title']
     file_name = _slugify(title)+'.xhtml'
-    content = _clean_js_and_styles(json_data['content'])
-    content = ARTICLE_TEMPLATE.format(**{
+    url = json_data['url']
+
+    body = _fetch_full_body(json_data['content'], url)
+    body = _clean_js_and_styles(body)
+
+    html = ARTICLE_TEMPLATE.format(**{
         'id': quote(id_),
         'all_ids': all_ids,
-        'content': content,
+        'content': body,
         'title': title,
         'author': json_data['author'],
         'date': json_data['date_published'],
         'blog': json_data['blog'],
     })
-    content = _add_images(book, content, json_data['url'])
-    content = _convert_urls_to_full(content, json_data['url'])
-    chapter = epub.EpubHtml(title=title, file_name=file_name, content=content)
+    html = _add_images(book, html, url)
+    html = _convert_urls_to_full(html, url)
 
+    chapter = epub.EpubHtml(title=title, file_name=file_name, content=html)
     book.add_item(chapter)
 
     return chapter
@@ -307,6 +313,19 @@ def _download_image(url):
     return name
 
 
+def _fetch_article_from_url(url):
+    article = Article(url)
+    article.download()
+    article.parse()
+    return tostring(article.top_node).decode()
+
+
+def _fetch_full_article(body, url):
+    if _has_read_more(body.strip()):
+        body = _fetch_article_from_url(url)
+    return body
+
+
 def _get_entries(db_path):
     db = Database(db_path)
     data = db.data()
@@ -324,6 +343,21 @@ def _get_entries(db_path):
     }
 
     return data
+
+
+def _has_read_more(body):
+    body = body.strip()
+    try:
+        tree = fromstring(body)
+        for node in tree.xpath('//*[@href]'):
+            if _read_more_re.search(node.text.lower(), re.IGNORECASE):
+                return True
+
+    except Exception:
+        return True
+
+    else:
+        return body.endswith('[&#8230;]')
 
 
 def _image_too_small(node):
