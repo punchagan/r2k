@@ -157,7 +157,7 @@ def _add_one_chapter(book, all_ids, id_, json_data):
     file_name = _slugify(title)+'.xhtml'
     url = json_data['url']
 
-    body = _fetch_full_body(json_data['content'], url)
+    body = _fetch_full_article(json_data['content'], url)
     body = _clean_js_and_styles(body)
 
     html = ARTICLE_TEMPLATE.format(**{
