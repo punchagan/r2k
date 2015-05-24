@@ -339,7 +339,7 @@ def _get_entries(db_path):
 
     data = {
         guid: entry for guid, entry in data.items()
-        if 'read' not in entry.get('tags', [])
+        if 'read' not in (entry.get('tags') or [])
     }
 
     return data
