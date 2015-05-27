@@ -317,7 +317,8 @@ def _fetch_article_from_url(url):
     article = Article(url)
     article.download()
     article.parse()
-    return tostring(article.top_node).decode()
+    node = article.top_node if article.top_node is not None else article.doc.find('body')
+    return tostring(node).decode()
 
 
 def _fetch_full_article(body, url):
