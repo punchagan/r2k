@@ -24,9 +24,9 @@ def add_article(feed, parsed, entry, guid, message):
     db = Database(path)
     key = random_string()
     data = {
-        'content': entry['summary'],
-        'title': entry['title'],
-        'url': entry['link'],
+        'content': entry.get('summary', 'no summary'),
+        'title': entry.get('title', 'no title'),
+        'url': entry.get('link', 'no link'),
         'author': entry.get('author', ''),
         'blog': parsed.get('feed', {}).get('title', ''),
         'date_published': time.strftime('%Y-%m-%dT%H:%M:%S%z', entry['updated_parsed']),
