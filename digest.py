@@ -123,7 +123,7 @@ def _add_chapters(book, data):
     keys = '&'.join('id={}'.format(quote(key)) for key, _ in data)
     chapters = [_add_one_chapter(book, keys, *entry) for entry in data]
 
-    return chapters
+    return filter(None, chapters)
 
 
 def _add_images(book, html, base_url):
@@ -156,6 +156,9 @@ def _add_one_chapter(book, all_ids, id_, json_data):
     title = json_data['title']
     file_name = _slugify(title)+'.xhtml'
     url = json_data['url']
+
+    if not url:
+        return
 
     body = _fetch_full_article(json_data['content'], url)
     body = _clean_js_and_styles(body)
