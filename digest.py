@@ -318,9 +318,15 @@ def _download_image(url):
 
 def _fetch_article_from_url(url):
     article = Article(url)
-    article.download()
-    article.parse()
-    node = article.top_node if article.top_node is not None else article.doc.find('body')
+
+    try:
+        article.download()
+        article.parse()
+        node = article.top_node if article.top_node is not None else article.doc.find('body')
+
+    except Exception:
+        node = None
+
     return tostring(node).decode() if node is not None else ''
 
 
