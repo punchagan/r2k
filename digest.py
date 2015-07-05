@@ -123,7 +123,7 @@ def _add_chapters(book, data):
     keys = '&'.join('id={}'.format(quote(key)) for key, _ in data)
     chapters = [_add_one_chapter(book, keys, *entry) for entry in data]
 
-    return filter(None, chapters)
+    return list(filter(None, chapters))
 
 
 def _add_images(book, html, base_url):
