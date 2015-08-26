@@ -371,8 +371,11 @@ def _has_read_more(body):
 
 
 def _image_too_small(node):
-    height = int(re.match(r'\d+', node.get('height', '100')).group())
-    width = int(re.match(r'\d+', node.get('width', '100')).group())
+    h = re.match(r'\d+', node.get('height') or '100')
+    height = int(h.group() if h is not None else 100)
+    w = re.match(r'\d+', node.get('width') or '100')
+    width = int(w.group() if h is not None else 100)
+
     return width * height < 10000
 
 
